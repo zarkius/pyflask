@@ -47,5 +47,16 @@ def total_usuarios():
     arrayUsuarios = [{'id_usuario': usuario.id, 'nombre_usuario': usuario.nombre} for usuario in Usuario.query.all()]
     return {'total_usuarios': total, 'usuarios': arrayUsuarios}
 
+@app.route('/rutas')
+def rutas():
+    rutas = []
+    for rule in app.url_map.iter_rules():
+        rutas.append({
+            'ruta': str(rule),
+            'metodos': list(rule.methods)
+        })
+    return {'rutas': rutas}
+
+
 if __name__ == '__main__':
     app.run(debug=True)
