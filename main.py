@@ -13,6 +13,18 @@ def mapear_rutas(app):
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://X2:1234@localhost/flask_app')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+@app.route('/')
+def index():
+    return 'Hello, World!'
+
+@app.route('/usuarios/<int:id>')
+def obtener_usuario(id):
+    usuario = Usuario.query.get(id)
+    if usuario:
+        return {'id': usuario.id, 'nombre': usuario.nombre, 'email': usuario.email}
+    else:
+        return {'message': 'Usuario no encontrado'}, 404
+
 # Inicializar la extensión SQLAlchemy
 db = SQLAlchemy(app)
 
