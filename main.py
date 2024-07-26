@@ -1,37 +1,41 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 
-# Generador que produce una secuencia de saludos
-def generador_saludos():
-    saludos = ["Hola, Mundo!", "Bonjour, le Monde!", "Hallo, Welt!", "Ciao, Mondo!", "Olá, Mundo!"]
-    for saludo in saludos:
-        yield saludo
+def mapear_rutas(app):
+    rutas = app.url_map.iter_rules()
+    rutas = list(map(lambda ruta: {'ruta': str(ruta)}, rutas))
+    return {'rutas': rutas}
 
-# Generador que produce una secuencia de errores
-def generador_errores():
-    errores = ["Error 404: Página no encontrada", "Error 500: Error interno del servidor"]
-    for error in errores:
-        yield error
+# Configuración de la base de datos usando variables de entorno
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://X2:1234@localhost/flask_app')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+# Inicializar la extensión SQLAlchemy
+db = SQLAlchemy(app)
 
-@app.route("/saludos")
-def mostrar_saludos():
-    return "<br>".join(generador_saludos())
+# Definir un modelo
+class Usuario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
 
-@app.route("/errores")
-def mostrar_errores():
-    return "<br>".join(generador_errores())
+    def __repr__(self):
+        return f'<Usuario {self.nombre}>'
 
-@app.route("/rutas")
-def mostrar_rutas():
-    rutas = []
-    for rule in app.url_map.iter_rules():
-        rutas.append(f"{rule.endpoint}: {rule.rule} [{', '.join(rule.methods)}]")
-    return "<br>".join(rutas)
+@app.route('/usuarios')
+def usuarios():
+    usuarios = Usuario.query.all()
+    usuarios = list(map(lambda usuario: {'id': usuario.id, 'nombre': usuario.nombre, 'email': usuario.email}, usuarios))
+    return {'usuarios': usuarios}
 
-if __name__ == "__main__":
-    app.run()
+@app.route('/rutas')
+def generar_mapa():
+    rutas = app.url_map.iter_rules()
+    rutas = list(map(lambda ruta: {'ruta': str(ruta)}, filter(lambda r: not str(r).startswith('/static'), rutas)))
+    return {'rutas': rutas}
+
+if __name__ == '__main__':
+    app.run(debug=True)
